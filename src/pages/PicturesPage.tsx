@@ -29,7 +29,7 @@ export default function PicturesPage() {
         ) : (
           <div className="grid tight" style={{ '--cols': zoom.cols } as React.CSSProperties}>
             {pics.map(({ it, img, k }) => (
-              <ItemTile key={img.id} item={it} imageUrl={img.url} showTitle={false} onTap={() => nav(`/item/${it.id}?img=${k}`)} />
+              <ItemTile key={img.id} item={it} image={img} showTitle={false} onTap={() => nav(`/item/${it.id}?img=${k}`)} />
             ))}
           </div>
         )}

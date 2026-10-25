@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useAction, useStore } from '../lib/store'
 import type { Theme } from '../lib/types'
-import { thumb } from '../lib/util'
 import { useFilePicker } from './ui'
 
 const PRESETS = ['#0b1026', '#111111', '#1f2a44', '#2b1d3a', '#173a35', '#9fd3cf', '#f4efe6', '#ffd6e0', '#cfe3ff', '#ffffff']
@@ -51,7 +50,7 @@ export function ThemeEditor({ value, onChange, allowColor = true, imageLabel = '
       )}
       <label className="field-label">{imageLabel}</label>
       <div className="bg-image-row">
-        {value.bgImageUrl ? <img src={thumb(value.bgImageUrl, 200)} alt="" /> : <div className="bg-empty">なし</div>}
+        {value.bgImageUrl ? <img src={value.bgImageUrl} alt="" /> : <div className="bg-empty">なし</div>}
         {canEdit && (
           <div className="col">
             <button className="btn small" onClick={picker.open} disabled={busy}>{busy ? 'アップロード中…' : '画像を選ぶ'}</button>

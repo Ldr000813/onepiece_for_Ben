@@ -1,7 +1,7 @@
 export type ImageRef = {
   id: string
   url: string
-  publicId?: string
+  thumbUrl?: string
   width?: number
   height?: number
 }
@@ -36,11 +36,12 @@ export type Item = {
 export type Settings = Theme
 
 export type Backend = {
-  mode: 'firebase' | 'demo'
+  mode: 'server' | 'demo'
   subscribe(cb: (s: { albums: Album[]; items: Item[]; settings: Settings }) => void): () => void
   addAlbum(a: Omit<Album, 'id'>): Promise<string>
   updateAlbum(id: string, patch: Partial<Album>): Promise<void>
-  deleteAlbum(id: string): Promise<void>
+  /** withItems=true のとき、他のアルバムに入っていないアイテムも削除 */
+  deleteAlbums(ids: string[], withItems: boolean): Promise<void>
   addItem(i: Omit<Item, 'id'>): Promise<string>
   updateItems(patches: { id: string; patch: Partial<Item> }[]): Promise<void>
   deleteItems(ids: string[]): Promise<void>

@@ -2,7 +2,7 @@ import type { Album, Backend, Item, Settings } from './types'
 import { uploadLocal } from './upload'
 import { uid } from './util'
 
-/** Firebase 未設定時のデモ用バックエンド（IndexedDB に丸ごと保存） */
+/** サーバー未接続時のデモ用バックエンド（IndexedDB に丸ごと保存） */
 type State = { albums: Album[]; items: Item[]; settings: Settings }
 
 const DB = 'album-wiki-demo'
@@ -77,9 +77,17 @@ export function createDemoBackend(): Backend {
       state.albums = state.albums.map((a) => (a.id === id ? { ...a, ...patch } : a))
       emit()
     },
-    async deleteAlbum(id) {
-      state.albums = state.albums.filter((a) => a.id !== id)
-      state.items = state.items.map((i) => (i.albumIds.includes(id) ? { ...i, albumIds: i.albumIds.filter((x) => x !== id) } : i))
+    async deleteAlbums(ids, withItems) {
+      const s = new Set(ids)
+      state.albums = state.albums.filter((a) => !s.has(a.id))
+      const next: Item[] = []
+      for (const i of state.items) {
+        if (!i.albumIds.some((a) => s.has(a))) { next.push(i); continue }
+        const rest = i.albumIds.filter((a) => !s.has(a))
+        if (withItems && rest.length === 0) continue
+        next.push({ ...i, albumIds: rest })
+      }
+      state.items = next
       emit()
     },
     async addItem(i) {

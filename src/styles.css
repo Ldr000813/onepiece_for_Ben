@@ -212,3 +212,12 @@ img { display: block; }
 .stat-row { display: grid; grid-template-columns: 1fr 1.4fr 44px; gap: 8px; width: 100%; }
 .md-input { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 15px; line-height: 1.6; resize: vertical; margin-top: 8px; }
 .edit-page { padding-bottom: 40px; }
+
+/* アルバム選択・削除 */
+.album-card.selected { outline: 3px solid var(--accent); outline-offset: -3px; }
+.album-card.selected .tick { background: var(--accent); border-color: var(--accent); color: #1a1500; }
+.album-card { -webkit-touch-callout: none; user-select: none; }
+.del-names { margin: 0; font-weight: 600; }
+.sheet .btn.ghost { border-color: rgba(255,255,255,.15); }
+.password-row { display: flex; gap: 8px; }
+.warn { background: rgba(245, 196, 81, .15); border: 1px solid rgba(245, 196, 81, .4); border-radius: 12px; padding: 10px 12px; font-size: .9rem; }

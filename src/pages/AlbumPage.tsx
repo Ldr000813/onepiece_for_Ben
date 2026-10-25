@@ -2,6 +2,7 @@ import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AlbumPicker } from '../components/AlbumPicker'
+import { DeleteAlbumsSheet } from '../components/DeleteAlbumsSheet'
 import { Icon } from '../components/Icon'
 import { ItemTile } from '../components/ItemTile'
 import { ThemeEditor } from '../components/ThemeEditor'
@@ -22,6 +23,7 @@ export default function AlbumPage() {
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [picker, setPicker] = useState<null | 'move' | 'copy'>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [rename, setRename] = useState('')
   const [progress, setProgress] = useState<string | null>(null)
 
@@ -114,7 +116,10 @@ export default function AlbumPage() {
               <Menu items={[
                 { label: '大きく表示', onClick: zoom.zoomIn },
                 { label: '小さく表示', onClick: zoom.zoomOut },
-                ...(canEdit ? [{ label: 'アルバム設定（名前・背景）', onClick: () => { setRename(album.name); setSettingsOpen(true) } }] : []),
+                ...(canEdit ? [
+                  { label: 'アルバム設定（名前・背景）', onClick: () => { setRename(album.name); setSettingsOpen(true) } },
+                  { label: 'アルバムを削除', danger: true, onClick: () => setDeleting(true) },
+                ] : []),
               ]} />
             )}
           </>
@@ -157,6 +162,7 @@ export default function AlbumPage() {
 
       {files.input}
       {picker && <AlbumPicker title={picker === 'move' ? '移動先のアルバム' : 'コピー先のアルバム'} exclude={id} onPick={moveCopy} onClose={() => setPicker(null)} />}
+      {deleting && <DeleteAlbumsSheet ids={[id]} onClose={() => setDeleting(false)} onDeleted={() => nav('/', { replace: true })} />}
       {settingsOpen && (
         <Sheet title="アルバム設定" onClose={() => setSettingsOpen(false)}>
           <label className="field-label">名前</label>
@@ -167,11 +173,7 @@ export default function AlbumPage() {
           </div>
           <ThemeEditor value={album.theme ?? {}} onChange={saveTheme} />
           <hr />
-          <button className="btn danger block" onClick={async () => {
-            if (!backend || !confirm(`アルバム「${album.name}」を削除しますか？（中のアイテムは残ります）`)) return
-            await run(() => backend.deleteAlbum(id), 'アルバムを削除しました')
-            nav('/')
-          }}>アルバムを削除</button>
+          <button className="btn danger block" onClick={() => { setSettingsOpen(false); setDeleting(true) }}>アルバムを削除</button>
         </Sheet>
       )}
     </div>

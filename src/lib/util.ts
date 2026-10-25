@@ -25,20 +25,8 @@ export const blobToDataUrl = (b: Blob) =>
     r.readAsDataURL(b)
   })
 
-/** Cloudinary URL ならサムネイル用の変換を挿入。それ以外はそのまま */
-export function thumb(url: string, size = 400) {
-  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    return url.replace('/upload/', `/upload/c_fill,w_${size},h_${size},g_auto,f_auto,q_auto/`)
-  }
-  return url
-}
-
-export function full(url: string) {
-  if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    return url.replace('/upload/', '/upload/f_auto,q_auto/')
-  }
-  return url
-}
+/** グリッド用のサムネイル URL（なければ本体） */
+export const thumbOf = (img?: { url: string; thumbUrl?: string }) => img?.thumbUrl ?? img?.url
 
 export const fileTitle = (name: string) => name.replace(/\.[^.]+$/, '')
 
@@ -47,7 +35,7 @@ export function bgStyle(color?: string, image?: string): CSSProperties {
   const s: CSSProperties & Record<string, string> = {}
   if (color) { s.backgroundColor = color; s['--bg'] = color }
   if (image) {
-    s.backgroundImage = `url("${full(image)}")`
+    s.backgroundImage = `url("${image}")`
     s.backgroundSize = 'cover'
     s.backgroundPosition = 'center'
     s.backgroundAttachment = 'fixed'

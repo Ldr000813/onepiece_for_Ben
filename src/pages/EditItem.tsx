@@ -4,7 +4,7 @@ import { ThemeEditor } from '../components/ThemeEditor'
 import { Header, IconButton, useFilePicker } from '../components/ui'
 import { useAction, useStore } from '../lib/store'
 import type { Item, Stat } from '../lib/types'
-import { thumb } from '../lib/util'
+import { thumbOf } from '../lib/util'
 
 const TEMPLATE = `## Description\n\n\n## History\n\n\n## Episodes\n\n`
 
@@ -81,7 +81,7 @@ export default function EditItem({ item, onDone }: { item: Item; onDone: (delete
         <div className="img-edit">
           {d.images.map((img, k) => (
             <div key={img.id} className={'img-cell' + (k === d.coverIndex ? ' cover' : '')}>
-              <img src={thumb(img.url, 200)} alt="" />
+              <img src={thumbOf(img)} alt="" />
               <div className="img-tools">
                 <button aria-label="前へ" onClick={() => moveImg(k, -1)}><Icon name="left" size={16} /></button>
                 <button aria-label="カバーにする" onClick={() => set({ coverIndex: k })}><Icon name="star" size={16} fill={k === d.coverIndex} /></button>

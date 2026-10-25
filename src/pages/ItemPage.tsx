@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon'
 import { ItemTile } from '../components/ItemTile'
 import { IconButton, Spinner } from '../components/ui'
 import { useStore } from '../lib/store'
-import { bgStyle, full } from '../lib/util'
+import { bgStyle } from '../lib/util'
 import EditItem from './EditItem'
 
 const textOf = (n: ReactNode): string =>
@@ -66,7 +66,7 @@ export default function ItemPage() {
           onScroll={(e) => { const el = e.currentTarget; setIdx(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))) }}>
           {item.images.length ? item.images.map((img) => (
             <div className="slide" key={img.id} onClick={() => setChrome((c) => !c)}>
-              <img src={full(img.url)} alt={item.title} draggable={false} />
+              <img src={img.url} alt={item.title} draggable={false} />
             </div>
           )) : <div className="slide"><div className="no-image"><Icon name="image" size={48} /><span>画像なし</span></div></div>}
         </div>

@@ -1,13 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { hasFirebase, ownerEmail } from './config'
+import { getPassword, setPassword } from './config'
 import { createDemoBackend } from './demoBackend'
+import { createServerBackend } from './serverBackend'
 import type { Album, Backend, Item, Settings } from './types'
 
-type AuthApi = {
-  user: { email: string | null; name: string | null } | null
-  login: () => Promise<unknown>
-  logout: () => Promise<unknown>
-}
+/** デモになっている理由 */
+export type DemoReason = 'local' | 'not_configured' | 'error' | null
 
 type Ctx = {
   backend: Backend | null
@@ -16,7 +14,11 @@ type Ctx = {
   items: Item[]
   settings: Settings
   canEdit: boolean
-  auth: AuthApi
+  authRequired: boolean
+  blobReady: boolean
+  demoReason: DemoReason
+  login: (pw: string) => Promise<boolean>
+  logout: () => void
   toast: (msg: string) => void
 }
 
@@ -26,28 +28,45 @@ export const useStore = () => useContext(StoreCtx)
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [backend, setBackend] = useState<Backend | null>(null)
   const [data, setData] = useState<{ albums: Album[]; items: Item[]; settings: Settings } | null>(null)
-  const [user, setUser] = useState<AuthApi['user']>(null)
-  const [authFns, setAuthFns] = useState<Pick<AuthApi, 'login' | 'logout'>>({ login: async () => {}, logout: async () => {} })
+  const [authRequired, setAuthRequired] = useState(false)
+  const [authed, setAuthed] = useState(false)
+  const [blobReady, setBlobReady] = useState(false)
+  const [demoReason, setDemoReason] = useState<DemoReason>(null)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
 
   useEffect(() => {
     let unsub = () => {}
-    let unsubUser = () => {}
     ;(async () => {
-      if (hasFirebase) {
-        const fb = await import('./firebaseBackend')
-        const b = fb.createFirebaseBackend()
-        setBackend(b)
-        setAuthFns({ login: fb.login, logout: fb.logout })
-        unsubUser = fb.watchUser((u) => setUser(u ? { email: u.email, name: u.displayName } : null))
-        unsub = b.subscribe(setData)
-      } else {
-        const b = createDemoBackend()
-        setBackend(b)
-        unsub = b.subscribe(setData)
+      let reason: DemoReason = 'local'
+      try {
+        const r = await fetch('/api/data', { cache: 'no-store' })
+        const isJson = (r.headers.get('content-type') ?? '').includes('application/json')
+        if (isJson) {
+          const j = await r.json()
+          if (r.ok) {
+            const b = createServerBackend({ albums: j.albums, items: j.items, settings: j.settings })
+            setAuthRequired(!!j.authRequired)
+            setBlobReady(!!j.blob)
+            if (j.authRequired && getPassword()) {
+              const a = await fetch('/api/auth', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: getPassword() }) })
+              setAuthed(!!(await a.json()).ok)
+            }
+            setBackend(b)
+            unsub = b.subscribe(setData)
+            return
+          }
+          reason = j.error === 'not_configured' ? 'not_configured' : 'error'
+          if (reason === 'error') console.error(j)
+        }
+      } catch {
+        reason = 'local'
       }
+      const b = createDemoBackend()
+      setDemoReason(reason)
+      setBackend(b)
+      unsub = b.subscribe(setData)
     })()
-    return () => { unsub(); unsubUser() }
+    return () => unsub()
   }, [])
 
   useEffect(() => {
@@ -56,9 +75,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t)
   }, [toastMsg])
 
-  const canEdit =
-    backend?.mode === 'demo' ||
-    (!!user && (!ownerEmail || (user.email ?? '').toLowerCase() === ownerEmail))
+  const canEdit = backend?.mode === 'demo' || (backend?.mode === 'server' && (!authRequired || authed))
 
   const value = useMemo<Ctx>(
     () => ({
@@ -68,10 +85,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       items: [...(data?.items ?? [])].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt),
       settings: data?.settings ?? {},
       canEdit,
-      auth: { user, ...authFns },
+      authRequired,
+      blobReady,
+      demoReason,
+      login: async (pw) => {
+        const r = await fetch('/api/auth', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+        const ok = !!(await r.json().catch(() => ({}))).ok
+        if (ok) { setPassword(pw); setAuthed(true) }
+        return ok
+      },
+      logout: () => { setPassword(''); setAuthed(false) },
       toast: setToastMsg,
     }),
-    [backend, data, canEdit, user, authFns],
+    [backend, data, canEdit, authRequired, blobReady, demoReason],
   )
 
   return (
