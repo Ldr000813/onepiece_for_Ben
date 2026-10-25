@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ↓ 編集を許可する Google アカウントのメールに書き換えてください（.env の VITE_OWNER_EMAIL と同じもの）
+    function isOwner() {
+      return request.auth != null && request.auth.token.email == 'YOUR_EMAIL@gmail.com';
+    }
+    match /{collection}/{id} {
+      allow read: if collection in ['albums', 'items', 'settings'];
+      allow write: if isOwner() && collection in ['albums', 'items', 'settings'];
+    }
+  }
+}
